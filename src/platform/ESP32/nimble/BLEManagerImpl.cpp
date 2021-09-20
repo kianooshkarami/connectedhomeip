@@ -33,6 +33,7 @@
 #include <ble/CHIPBleServiceData.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
+#include <platform/PASEUtils.h>
 #include <platform/internal/BLEManager.h>
 #include <system/SystemTimer.h>
 
@@ -90,7 +91,10 @@ const ble_uuid128_t UUID_CHIPoBLEChar_TX   = {
     { BLE_UUID_TYPE_128 }, { 0x12, 0x9D, 0x9F, 0x42, 0x9C, 0x4F, 0x9F, 0x95, 0x59, 0x45, 0x3D, 0x26, 0xF5, 0x2E, 0xEE, 0x18 }
 };
 
-SemaphoreHandle_t semaphoreHandle = NULL;
+SemaphoreHandle_t semaphoreHandle         = NULL;
+constexpr size_t kPASEUpdateSizeBytes     = (8 * 1024);
+constexpr uint8_t kPASEUpdateTaskPriority = 5;
+TaskHandle_t PASETaskHandle;
 
 } // unnamed namespace
 
@@ -882,7 +886,8 @@ CHIP_ERROR BLEManagerImpl::HandleGAPConnect(struct ble_gap_event * gapEvent)
 
     // Track the number of active GAP connections.
     mNumGAPCons++;
-    err = SetSubscribed(gapEvent->connect.conn_handle);
+    getInstance()->conId = gapEvent->connect.conn_handle;
+    err                  = SetSubscribed(gapEvent->connect.conn_handle);
     VerifyOrExit(err != CHIP_ERROR_NO_MEMORY, err = CHIP_NO_ERROR);
     SuccessOrExit(err);
 
@@ -1089,6 +1094,23 @@ int BLEManagerImpl::gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_hand
     return err;
 }
 
+void PASEUpdates(void * arg)
+{
+    while (1)
+    {
+        if (getInstance()->pFlags.Has(getInstance()->PASEFlags::kPASESessionFailed))
+        {
+            CHIP_ERROR err;
+            getInstance()->pFlags.Set(getInstance()->PASEFlags::kPASESessionNone);
+            getInstance()->pFlags.Clear(getInstance()->PASEFlags::kPASESessionFailed);
+            ((BLEManagerImpl *) arg)->CloseConnection(getInstance()->conId);
+            vTaskDelete(PASETaskHandle);
+        }
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+    }
+    vTaskDelete(NULL);
+}
+
 CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
 {
     CHIP_ERROR err;
@@ -1120,6 +1142,9 @@ CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
         adv_params.itvl_min = CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MIN;
         adv_params.itvl_max = CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MAX;
     }
+
+    xTaskCreate(PASEUpdates, "PASE-Info", kPASEUpdateSizeBytes / sizeof(StackType_t), &sInstance, kPASEUpdateTaskPriority,
+                &PASETaskHandle);
 
     ChipLogProgress(DeviceLayer, "Configuring CHIPoBLE advertising (interval %" PRIu32 " ms, %sconnectable, device name %s)",
                     (((uint32_t) adv_params.itvl_min) * 10) / 16, (connectable) ? "" : "non-", mDeviceName);

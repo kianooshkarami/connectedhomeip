@@ -118,6 +118,7 @@ private:
 
     friend BLEManager & BLEMgr(void);
     friend BLEManagerImpl & BLEMgrImpl(void);
+    friend void PASEUpdates(void *);
 
     static BLEManagerImpl sInstance;
 

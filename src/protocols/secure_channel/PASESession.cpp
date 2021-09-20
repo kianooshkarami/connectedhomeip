@@ -40,6 +40,7 @@
 #include <lib/support/ErrorStr.h>
 #include <lib/support/SafeInt.h>
 #include <lib/support/TypeTraits.h>
+#include <platform/PASEUtils.h>
 #include <protocols/Protocols.h>
 #include <protocols/secure_channel/Constants.h>
 #include <protocols/secure_channel/StatusReport.h>
@@ -892,6 +893,7 @@ CHIP_ERROR PASESession::OnMessageReceived(ExchangeContext * exchange, const Payl
         break;
 
     case MsgType::PASE_Pake1:
+        getInstance()->pFlags.Set(getInstance()->PASEFlags::kPASESessionEnabled);
         err = HandleMsg1_and_SendMsg2(std::move(msg));
         break;
 
@@ -922,6 +924,8 @@ exit:
         mExchangeCtxt = nullptr;
         Clear();
         ChipLogError(SecureChannel, "Failed during PASE session setup. %s", ErrorStr(err));
+        getInstance()->pFlags.Set(getInstance()->PASEFlags::kPASESessionFailed);
+        getInstance()->pFlags.Clear(getInstance()->PASEFlags::kPASESessionEnabled);
         mDelegate->OnSessionEstablishmentError(err);
     }
     return err;
