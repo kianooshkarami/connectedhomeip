@@ -38,6 +38,7 @@ namespace chip {
 
 constexpr size_t kMaxBlePendingPackets = 1;
 
+using BLETransport = chip::Transport::BLE<kMaxBlePendingPackets>;
 using ServerTransportMgr = chip::TransportMgr<chip::Transport::UDP
 #if INET_CONFIG_ENABLE_IPV4
                                               ,
@@ -70,6 +71,8 @@ public:
     SessionManager & GetSecureSessionManager() { return mSessions; }
 
     TransportMgrBase & GetTransportManager() { return mTransports; }
+
+    BLETransport & GetBLEManager() { return mBle; }
 
     CommissioningWindowManager & GetCommissioningWindowManager() { return mCommissioningWindowManager; }
 
@@ -114,6 +117,7 @@ private:
     AppDelegate * mAppDelegate = nullptr;
 
     ServerTransportMgr mTransports;
+    BLETransport mBle;
     SessionManager mSessions;
     CASEServer mCASEServer;
     Messaging::ExchangeManager mExchangeMgr;

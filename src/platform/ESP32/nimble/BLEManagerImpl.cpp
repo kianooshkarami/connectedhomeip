@@ -1094,7 +1094,7 @@ int BLEManagerImpl::gatt_svr_chr_access(uint16_t conn_handle, uint16_t attr_hand
     return err;
 }
 
-void PASEUpdates(void * arg)
+/*void PASEUpdates(void * arg)
 {
     while (1)
     {
@@ -1109,7 +1109,7 @@ void PASEUpdates(void * arg)
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
     vTaskDelete(NULL);
-}
+}*/
 
 CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
 {
@@ -1143,8 +1143,8 @@ CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
         adv_params.itvl_max = CHIP_DEVICE_CONFIG_BLE_SLOW_ADVERTISING_INTERVAL_MAX;
     }
 
-    xTaskCreate(PASEUpdates, "PASE-Info", kPASEUpdateSizeBytes / sizeof(StackType_t), &sInstance, kPASEUpdateTaskPriority,
-                &PASETaskHandle);
+/*    xTaskCreate(PASEUpdates, "PASE-Info", kPASEUpdateSizeBytes / sizeof(StackType_t), &sInstance, kPASEUpdateTaskPriority,
+                &PASETaskHandle);*/
 
     ChipLogProgress(DeviceLayer, "Configuring CHIPoBLE advertising (interval %" PRIu32 " ms, %sconnectable, device name %s)",
                     (((uint32_t) adv_params.itvl_min) * 10) / 16, (connectable) ? "" : "non-", mDeviceName);
