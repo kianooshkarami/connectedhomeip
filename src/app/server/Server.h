@@ -38,7 +38,7 @@ namespace chip {
 
 constexpr size_t kMaxBlePendingPackets = 1;
 
-using BLETransport = chip::Transport::BLE<kMaxBlePendingPackets>;
+using BLETransport       = chip::Transport::BLE<kMaxBlePendingPackets>;
 using ServerTransportMgr = chip::TransportMgr<chip::Transport::UDP
 #if INET_CONFIG_ENABLE_IPV4
                                               ,
